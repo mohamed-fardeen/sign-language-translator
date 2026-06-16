@@ -1,0 +1,62 @@
+stages:
+  preprocess:
+    desc: Resample raw videos to 30 fps, strip audio, isolate clip windows
+    cmd: python scripts/preprocess_videos.py
+    deps:
+      - scripts/preprocess_videos.py
+      - src/signlang/data/preprocessing
+      - data/raw
+    params:
+      - features.preprocess
+    outs:
+      - data/interim
+
+  landmarks:
+    desc: Extract MediaPipe Holistic landmarks per frame
+    cmd: python scripts/extract_landmarks.py
+    deps:
+      - scripts/extract_landmarks.py
+      - src/signlang/data/landmarks
+      - data/interim
+    params:
+      - features.mediapipe
+      - features.streams
+    outs:
+      - data/processed
+
+  features:
+    desc: Build fixed-length clip features, vocab, and splits
+    cmd: python scripts/build_vocab.py
+    deps:
+      - scripts/build_vocab.py
+      - src/signlang/data/datasets
+      - data/processed
+    params:
+      - features.preprocess
+    outs:
+      - data/features
+      - data/vocab/vocab.json
+
+  train:
+    desc: Train the Transformer + CTC sign model
+    cmd: python scripts/train.py
+    deps:
+      - scripts/train.py
+      - src/signlang
+      - configs
+    params:
+      - train
+      - model
+    metrics:
+      - artifacts/logs/metrics.json:
+          cache: false
+
+  evaluate:
+    desc: Evaluate the best checkpoint on the held-out test split
+    cmd: python scripts/evaluate.py
+    deps:
+      - scripts/evaluate.py
+      - src/signlang/evaluation
+    metrics:
+      - artifacts/logs/test_metrics.json:
+          cache: false

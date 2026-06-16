@@ -1,0 +1,26 @@
+groups:
+  - name: signlang
+    rules:
+      - alert: SignlangHighLatency
+        expr: histogram_quantile(0.95, sum by (le) (rate(predict_latency_seconds_bucket[5m]))) > 0.4
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: "signlang p95 latency above 400 ms for 5 min"
+
+      - alert: SignlangHighErrorRate
+        expr: sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) > 0.01
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: "signlang 5xx error rate above 1% for 5 min"
+
+      - alert: SignlangDrift
+        expr: signlang_drift_topk > 0.2
+        for: 1h
+        labels:
+          severity: ticket
+        annotations:
+          summary: "signlang top-K distribution drift above 0.2"

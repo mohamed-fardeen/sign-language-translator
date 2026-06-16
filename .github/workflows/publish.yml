@@ -1,0 +1,56 @@
+name: publish
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      run_train:
+        description: "Run training before publishing artifacts"
+        type: boolean
+        default: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install
+        run: |
+          pip install -r requirements/dev.txt
+
+      - name: (optional) Train
+        if: ${{ inputs.run_train || startsWith(github.ref, 'refs/tags/v') }}
+        run: |
+          python scripts/train.py --no-mlflow || true
+
+      - name: Export ONNX + TorchScript
+        if: ${{ hashFiles('artifacts/checkpoints/*.ckpt') != '' }}
+        run: |
+          CKPT=$(ls -1 artifacts/checkpoints/*.ckpt | head -n1)
+          python scripts/export_onnx.py --ckpt "$CKPT" --out-dir artifacts/exported/browser || true
+          python scripts/export_torchscript.py --ckpt "$CKPT" --out-dir artifacts/exported/server || true
+        shell: bash
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: signlang-artifacts
+          path: |
+            artifacts/exported/
+            artifacts/logs/
+
+      - name: Trigger Render deploy
+        if: ${{ env.RENDER_DEPLOY_HOOK != '' }}
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: curl -fsS -X POST "$RENDER_DEPLOY_HOOK" || true

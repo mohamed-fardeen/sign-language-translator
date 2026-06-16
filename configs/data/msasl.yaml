@@ -1,0 +1,6 @@
+_target_: signlang.data.ingestion.downloaders.MSASLDownloader
+name: msasl
+root: ${paths.raw_dir}/msasl
+url: https://www.kaggle.com/datasets/soongpal/ms-asl
+format: mp4
+license: research-only

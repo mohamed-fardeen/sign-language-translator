@@ -1,0 +1,19 @@
+vocab_size: 500
+clip_frames: 64
+target_fps: 30
+seed: 42
+
+train:
+  max_epochs: 80
+  batch_size: 32
+  lr: 0.0003
+  weight_decay: 0.00001
+  warmup_ratio: 0.05
+  precision: bf16-mixed
+
+model:
+  d_model: 512
+  n_heads: 8
+  n_layers: 6
+  dim_feedforward: 2048
+  dropout: 0.1

@@ -1,0 +1,111 @@
+:root {
+  --bg: #0b1020;
+  --card: #131a32;
+  --accent: #5eead4;
+  --text: #e6edf3;
+  --muted: #8b95a7;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+header {
+  padding: 1.5rem 2rem 1rem;
+  border-bottom: 1px solid #1f2742;
+}
+header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  letter-spacing: 0.05em;
+}
+.tagline {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+main {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  padding: 1.5rem 2rem;
+}
+@media (max-width: 800px) {
+  main { grid-template-columns: 1fr; }
+}
+section {
+  background: var(--card);
+  border: 1px solid #1f2742;
+  border-radius: 12px;
+  padding: 1rem;
+}
+.video-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: #000;
+  border-radius: 8px;
+  overflow: hidden;
+}
+video, canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+video { object-fit: cover; }
+canvas { pointer-events: none; }
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+button {
+  background: #1f2742;
+  color: var(--text);
+  border: 1px solid #2c375a;
+  padding: 0.5rem 0.9rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+button:hover:not(:disabled) {
+  background: #2c375a;
+  border-color: var(--accent);
+}
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+.status {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.results h2 { margin-top: 0; }
+.top-gloss {
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin: 0.5rem 0;
+}
+.top-k {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+.top-k li {
+  margin: 0.25rem 0;
+  font-variant-numeric: tabular-nums;
+}
+.meta {
+  margin-top: 0.75rem;
+  display: flex;
+  gap: 1.25rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+footer {
+  padding: 1rem 2rem 2rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}

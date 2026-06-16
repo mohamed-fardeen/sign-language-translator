@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: signlang-api
+    runtime: docker
+    rootDir: .
+    dockerfilePath: ./docker/serve.Dockerfile
+    plan: starter
+    healthCheckPath: /v1/health
+    autoDeploy: true
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
+      - key: MODEL_VERSION
+        value: latest
+      - key: BEAM_SIZE
+        value: "8"
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: JWT_TTL_SECONDS
+        value: "900"
+      - key: RATE_LIMIT_PER_MIN
+        value: "60"
+      - key: VOCAB_SIZE
+        value: "500"
+      - key: CLIP_FRAMES
+        value: "64"
+      # JWT_SECRET is set manually in the Render dashboard, never in this file.
+      - key: JWT_SECRET
+        sync: false

@@ -1,0 +1,35 @@
+mediapipe:
+  model_complexity: 1
+  smooth_landmarks: true
+  refine_face_landmarks: false
+  static_image_mode: false
+
+streams:
+  pose:
+    enabled: true
+    n_keypoints: 33
+  left_hand:
+    enabled: true
+    n_keypoints: 21
+  right_hand:
+    enabled: true
+    n_keypoints: 21
+  face:
+    enabled: true
+    subset: [lips, eyebrows, jaw]
+    n_keypoints: 40
+
+preprocess:
+  target_fps: 30
+  frame_size: 256
+  clip_frames: 64
+  min_frames: 32
+  max_frames: 96
+
+normalization:
+  center_on_pose: true
+  pose_index_shoulder_left: 11
+  pose_index_shoulder_right: 12
+  scale_by: shoulder_distance
+
+missing_hand_strategy: zero_fill

@@ -1,0 +1,25 @@
+api:
+  host: 0.0.0.0
+  port: 8000
+  cors_origins: ["*"]
+  rate_limit_per_min: 60
+
+auth:
+  jwt_secret_env: JWT_SECRET
+  jwt_algorithm: HS256
+  jwt_ttl_seconds: 900
+  default_scope: predict
+
+model:
+  backend: torchscript
+  path: ${paths.export_dir}/server/model.pt
+  device: cpu
+  beam_size: 8
+  batch_window_ms: 30
+  max_batch_size: 32
+
+observability:
+  log_level: INFO
+  enable_prometheus: true
+  enable_tracing: true
+  otlp_endpoint: ""

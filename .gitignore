@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+build/
+dist/
+
+# Data and artifacts
+data/raw/
+data/processed/
+data/features/
+data/interim/
+artifacts/checkpoints/*
+artifacts/exported/*
+artifacts/logs/*
+mlruns/
+!artifacts/.gitkeep
+!artifacts/checkpoints/.gitkeep
+!artifacts/exported/.gitkeep
+!artifacts/logs/.gitkeep
+!mlruns/.gitkeep
+
+# Media
+*.mp4
+*.mov
+*.avi
+*.webm
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Secrets / env
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# DVC
+/dvc.lock

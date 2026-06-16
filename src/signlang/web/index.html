@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>signlang - ASL isolated sign recognizer</title>
+  <link rel="stylesheet" href="/web/css/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.1/dist/ort.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic@0.5.1675471629/holistic.js" crossorigin="anonymous"></script>
+</head>
+<body>
+  <header>
+    <h1>signlang</h1>
+    <p class="tagline">ASL isolated sign recognizer (500-gloss vocab, browser-side inference)</p>
+  </header>
+
+  <main>
+    <section class="capture">
+      <div class="video-wrap">
+        <video id="webcam" autoplay playsinline muted></video>
+        <canvas id="overlay"></canvas>
+      </div>
+      <div class="controls">
+        <button id="startBtn">Start camera</button>
+        <button id="recordBtn" disabled>Record clip</button>
+        <button id="predictBtn" disabled>Predict</button>
+        <button id="stopBtn" disabled>Stop</button>
+      </div>
+      <div id="status" class="status">Idle.</div>
+    </section>
+
+    <section class="results">
+      <h2>Prediction</h2>
+      <div id="topGloss" class="top-gloss">-</div>
+      <ol id="topK" class="top-k"></ol>
+      <div class="meta">
+        <span>latency: <span id="latency">-</span> ms</span>
+        <span>model: <span id="modelVer">browser</span></span>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <small>v1 . browser inference via ONNX Runtime Web . server: <span id="serverUrl">/v1</span></small>
+  </footer>
+
+  <script src="/web/js/capture.js"></script>
+  <script src="/web/js/inference.js"></script>
+  <script src="/web/js/app.js"></script>
+</body>
+</html>

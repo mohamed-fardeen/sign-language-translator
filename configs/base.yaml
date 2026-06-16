@@ -1,0 +1,37 @@
+defaults:
+  - data: wlasl
+  - features: mediapipe_holistic
+  - model: sign_transformer
+  - train: default
+  - serve: local
+  - _self_
+
+project: signlang
+run_name: ${now:%Y-%m-%d_%H-%M-%S}
+seed: 42
+paths:
+  data_dir: ${oc.env:DATA_DIR,./data}
+  artifacts_dir: ${oc.env:ARTIFACTS_DIR,./artifacts}
+  configs_dir: ${oc.env:CONFIGS_DIR,./configs}
+  raw_dir: ${paths.data_dir}/raw
+  interim_dir: ${paths.data_dir}/interim
+  processed_dir: ${paths.data_dir}/processed
+  features_dir: ${paths.data_dir}/features
+  datasets_dir: ${paths.data_dir}/datasets
+  vocab_path: ${paths.data_dir}/vocab/vocab.json
+  checkpoint_dir: ${paths.artifacts_dir}/checkpoints
+  export_dir: ${paths.artifacts_dir}/exported
+  log_dir: ${paths.artifacts_dir}/logs
+
+mlflow:
+  tracking_uri: ${oc.env:MLFLOW_TRACKING_URI,http://localhost:5000}
+  experiment: ${oc.env:MLFLOW_EXPERIMENT,signlang-baselines}
+  run_name: ${run_name}
+
+dvc:
+  remote: ${oc.env:DVC_REMOTE,}
+
+model_export:
+  onnx_opset: 17
+  onnx_int8: true
+  torchscript_fp16: true

@@ -1,0 +1,6 @@
+_target_: signlang.data.ingestion.downloaders.WLASLDownloader
+name: wlasl
+root: ${paths.raw_dir}/wlasl
+url: https://www.kaggle.com/datasets/risangbudi07/wlasl-processed
+format: mp4
+license: research-only
