@@ -1,6 +1,5 @@
 _target_: signlang.data.ingestion.downloaders.ASLCitizenDownloader
 name: asl_citizen
 root: ${paths.raw_dir}/asl_citizen
-url: https://www.kaggle.com/datasets/grassknoted/asl-citizen
-format: mp4
+kaggle_id: grassknoted/asl-citizen
 license: research-only

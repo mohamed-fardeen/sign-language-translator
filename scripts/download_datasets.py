@@ -21,7 +21,7 @@ def main() -> None:
     cfg = load_config([f"data={args.dataset}"])
     data_cfg = to_dict(cfg)["data"]
     root = Path(args.root) if args.root else Path(to_dict(cfg)["paths"]["raw_dir"]) / args.dataset
-    dl = get_downloader(args.dataset, root=root, url=data_cfg["url"])
+    dl = get_downloader(args.dataset, root=root, kaggle_id=data_cfg["kaggle_id"])
     if dl.is_complete() and not args.force:
         log.info("download.skip", dataset=args.dataset, root=str(root))
         return

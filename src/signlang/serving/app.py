@@ -14,6 +14,7 @@ from signlang.config import load_config, to_dict
 from signlang.serving.api.v1 import api_router
 from signlang.serving.middleware import StructuredLoggingMiddleware
 from signlang.serving.model_registry import ModelRegistry
+from signlang.serving.observability import instrument_fastapi, setup_tracing
 from signlang.serving.security import JWTConfig
 from signlang.utils.io import read_json
 from signlang.utils.logging import configure_logging, get_logger
@@ -77,6 +78,12 @@ def create_app() -> FastAPI:
     )
 
     cfg = to_dict(load_config([f"serve={SERVE_ENV}"]))
+    if cfg["serve"]["observability"].get("enable_tracing", True):
+        setup_tracing(
+            service_name="signlang-api",
+            otlp_endpoint=cfg["serve"]["observability"].get("otlp_endpoint") or None,
+        )
+        instrument_fastapi(app)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=cfg["serve"]["api"]["cors_origins"],
