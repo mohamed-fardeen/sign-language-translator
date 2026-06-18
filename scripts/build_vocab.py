@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from collections import Counter
 from pathlib import Path
 
 from signlang.config import load_config, to_dict
 from signlang.data.datasets.clip_dataset import make_manifest, stratified_split
+from signlang.data.ingestion.annotations import build_gloss_to_id, build_id_to_gloss
 from signlang.utils.io import write_json
 from signlang.utils.logging import configure_logging, get_logger
 
@@ -39,25 +41,38 @@ def main() -> None:
                 records.append(json.loads(line))
     log.info("vocab.records", count=len(records))
 
-    label_counter = Counter(int(r["label"]) for r in records)
-    keep_labels = {label for label, _ in label_counter.most_common(vocab_size)}
-    filtered = [r for r in records if int(r["label"]) in keep_labels]
+    if not records:
+        log.error("vocab.empty_manifest", path=str(manifest))
+        sys.exit(1)
 
-    label_to_id = {label: i + 1 for i, label in enumerate(sorted(keep_labels))}
+    gloss_counter = Counter(str(r["gloss"]) for r in records)
+    kept_glosses = {g for g, _ in gloss_counter.most_common(vocab_size)}
+    filtered = [r for r in records if str(r["gloss"]) in kept_glosses]
+
+    gloss_to_id = build_gloss_to_id(kept_glosses)
+    id_to_gloss = build_id_to_gloss(gloss_to_id)
     for r in filtered:
-        r["label"] = label_to_id[int(r["label"])]
-    vocab = {label: i + 1 for i, label in enumerate(sorted(keep_labels))}
-    {i + 1: label for label, i in vocab.items()}
+        r["label"] = gloss_to_id[str(r["gloss"])]
 
+    vocab_path = out_dir.parent.parent / "vocab" / "vocab.json"
     write_json(
         {
-            "vocab_size": len(vocab),
+            "vocab_size": len(gloss_to_id),
             "blank_id": 0,
-            "id_to_gloss": {str(i): l for l, i in vocab.items()},
-            "gloss_to_id": {l: i for l, i in vocab.items()},
+            "id_to_gloss": id_to_gloss,
+            "gloss_to_id": gloss_to_id,
         },
-        out_dir.parent.parent / "vocab" / "vocab.json",
+        vocab_path,
     )
+    log.info("vocab.written", path=str(vocab_path), vocab_size=len(gloss_to_id))
+
+    if len(gloss_to_id) < 2:
+        log.error(
+            "vocab.too_small",
+            vocab_size=len(gloss_to_id),
+            unique_glosses_in_manifest=len(gloss_counter),
+        )
+        sys.exit(1)
 
     train, val, test = stratified_split(
         filtered, val_ratio=args.val_ratio, test_ratio=args.test_ratio, seed=42
@@ -67,7 +82,7 @@ def main() -> None:
     make_manifest(test, out_dir / "test.json", clip_frames=clip_frames)
     log.info(
         "vocab.done",
-        vocab=len(vocab),
+        vocab=len(gloss_to_id),
         train=len(train),
         val=len(val),
         test=len(test),

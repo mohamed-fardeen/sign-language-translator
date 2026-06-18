@@ -131,6 +131,32 @@ def write_landmarks_npz(out_path: Path, clip: dict[str, np.ndarray]) -> None:
     np.savez_compressed(out_path, **clip)
 
 
+def process_video(
+    video_path: str | Path,
+    out_path: str | Path,
+    target_fps: int = 30,
+    model_complexity: int = 1,
+) -> tuple[bool, str | None]:
+    """Module-level worker: extract landmarks from one video and write .npz.
+
+    Designed for ``ProcessPoolExecutor`` -- no closures, no shared state.
+    Writes the .npz inside the worker to avoid pickling the per-frame
+    arrays back over the IPC boundary.
+    """
+    try:
+        clip = extract_clip_dict(video_path, target_fps=target_fps)
+    except Exception as exc:
+        return False, str(exc)
+    clip["pose"] = clip["pose"].astype(np.float32)
+    clip["lh"] = clip["lh"].astype(np.float32)
+    clip["rh"] = clip["rh"].astype(np.float32)
+    try:
+        write_landmarks_npz(Path(out_path), clip)
+    except Exception as exc:
+        return False, str(exc)
+    return True, None
+
+
 def read_landmarks_npz(path: Path) -> dict[str, np.ndarray]:
     with np.load(path) as data:
         return {k: data[k] for k in data.files}

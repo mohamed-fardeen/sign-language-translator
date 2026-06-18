@@ -1,0 +1,5 @@
+[
+  {"gloss": "hello", "instances": [{"video_id": "v_0", "split": "train"}]},
+  {"gloss": "thanks", "instances": [{"video_id": "v_1", "split": "train"}]},
+  {"gloss": "yes", "instances": [{"video_id": "v_2", "split": "train"}]}
+]
