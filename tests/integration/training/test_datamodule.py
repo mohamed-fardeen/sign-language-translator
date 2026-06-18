@@ -18,7 +18,6 @@ def test_datamodule_constructs(tmp_path) -> None:
             pose=np.zeros((T, 99), dtype=np.float32),
             lh=np.zeros((T, 63), dtype=np.float32),
             rh=np.zeros((T, 63), dtype=np.float32),
-            face=np.zeros((T, 120), dtype=np.float32),
             mask=np.ones(T, dtype=bool),
         )
 

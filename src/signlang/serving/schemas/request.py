@@ -18,7 +18,6 @@ class ClipPayload(BaseModel):
     pose: list[list[float]] = Field(..., description="(T, 99) per-frame pose landmarks")
     lh: list[list[float]] = Field(..., description="(T, 63) left-hand landmarks")
     rh: list[list[float]] = Field(..., description="(T, 63) right-hand landmarks")
-    face: list[list[float]] = Field(..., description="(T, 120) face-subset landmarks")
     mask: list[bool] | None = Field(default=None, description="(T,) valid-frame mask")
 
 

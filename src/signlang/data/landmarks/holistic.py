@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
@@ -16,13 +15,10 @@ log = get_logger(__name__)
 class LandmarkLayout:
     pose_dim: int = 33 * 3
     hand_dim: int = 21 * 3
-    face_dim: int = 40 * 3
-    face_indices: tuple[int, ...] = (
-        61, 185, 40, 39, 37, 0, 267, 269, 270, 409,
-        291, 146, 91, 181, 84, 17, 314, 405, 321, 375,
-        78, 191, 80, 81, 82, 13, 312, 311, 310, 415,
-        95, 88, 178, 87, 14, 317, 402, 318, 324, 308,
-    )
+
+    @property
+    def total_dim(self) -> int:
+        return self.pose_dim + 2 * self.hand_dim
 
 
 LAYOUT = LandmarkLayout()
@@ -59,15 +55,6 @@ def _extract_from_frame(holistic, frame_bgr: np.ndarray) -> dict[str, np.ndarray
             rh[i * 3 + 2] = lm.z
     out["rh"] = rh
 
-    face = np.zeros(LAYOUT.face_dim, dtype=np.float32)
-    if res.face_landmarks:
-        for out_i, src_i in enumerate(LAYOUT.face_indices):
-            if src_i < len(res.face_landmarks.landmark):
-                lm = res.face_landmarks.landmark[src_i]
-                face[out_i * 3 + 0] = lm.x
-                face[out_i * 3 + 1] = lm.y
-                face[out_i * 3 + 2] = lm.z
-    out["face"] = face
     return out
 
 
@@ -86,7 +73,7 @@ def extract_video_landmarks(
     if src_fps <= 0:
         src_fps = target_fps
     step = max(1, round(src_fps / target_fps))
-    total_dim = LAYOUT.pose_dim + 2 * LAYOUT.hand_dim + LAYOUT.face_dim
+
     frames: list[np.ndarray] = []
 
     with mp.solutions.holistic.Holistic(
@@ -103,14 +90,14 @@ def extract_video_landmarks(
                 feats = _extract_from_frame(holistic, frame)
                 frames.append(
                     np.concatenate(
-                        [feats["pose"], feats["lh"], feats["rh"], feats["face"]],
+                        [feats["pose"], feats["lh"], feats["rh"]],
                         axis=0,
                     )
                 )
             idx += 1
     cap.release()
     if not frames:
-        return np.zeros((0, total_dim), dtype=np.float32)
+        return np.zeros((0, LAYOUT.total_dim), dtype=np.float32)
     return np.stack(frames, axis=0).astype(np.float32)
 
 
@@ -123,11 +110,7 @@ def extract_clip_dict(
     return {
         "pose": arr[:, : LAYOUT.pose_dim],
         "lh": arr[:, LAYOUT.pose_dim : LAYOUT.pose_dim + LAYOUT.hand_dim],
-        "rh": arr[
-            :,
-            LAYOUT.pose_dim + LAYOUT.hand_dim : LAYOUT.pose_dim + 2 * LAYOUT.hand_dim,
-        ],
-        "face": arr[:, LAYOUT.pose_dim + 2 * LAYOUT.hand_dim :],
+        "rh": arr[:, LAYOUT.pose_dim + LAYOUT.hand_dim :],
         "mask": np.ones(n, dtype=bool),
     }
 
@@ -154,6 +137,8 @@ def read_landmarks_npz(path: Path) -> dict[str, np.ndarray]:
 
 
 def write_manifest(records: list[dict], path: Path) -> None:
+    import json
+
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         for r in records:

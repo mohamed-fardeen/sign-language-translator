@@ -4,7 +4,7 @@ blank_id: 0
 clip_frames: 64
 in_dim_pose: 99
 in_dim_hand: 63
-in_dim_face: 120
+n_streams: 3
 encoder_dim: 128
 fusion_dim: 512
 backbone:

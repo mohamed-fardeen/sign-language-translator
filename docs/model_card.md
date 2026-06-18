@@ -7,8 +7,8 @@ a fixed 500-gloss vocabulary.
 
 ## Model
 - **Backbone**: 6-layer Transformer encoder, d=512, 8 heads, GELU, pre-LN.
-- **Input**: per-stream MLPs (128 dim) over pose, left hand, right hand,
-  face (345 dim total), then fusion (concat) to 512 dim.
+- **Input**: per-stream MLPs (128 dim) over pose, left hand, right hand
+  (225 dim total), then fusion (concat) to 512 dim. No face stream in v1.
 - **Head**: CTC over 500 glosses + blank = 501 logits per frame.
 - **Loss**: CTC + L2 weight decay (1e-5).
 - **Optimizer**: AdamW (lr=3e-4, betas=(0.9, 0.98)).

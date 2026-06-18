@@ -40,7 +40,6 @@ The token is HS256-signed and expires in 15 minutes. Use it as
     "pose": [[0.1, 0.2, 0.0, ...], ...],   // shape (T, 99)
     "lh":   [[...]],                       // (T, 63)
     "rh":   [[...]],                       // (T, 63)
-    "face": [[...]],                       // (T, 120)
     "mask": [true, true, ...]              // (T,)
   },
   "top_k": 5,

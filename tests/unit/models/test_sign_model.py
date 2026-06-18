@@ -14,7 +14,7 @@ def _tiny_cfg() -> OmegaConf:
             "clip_frames": 16,
             "in_dim_pose": 99,
             "in_dim_hand": 63,
-            "in_dim_face": 120,
+            "n_streams": 3,
             "encoder_dim": 32,
             "fusion_dim": 64,
             "backbone": {
@@ -41,8 +41,7 @@ def test_sign_model_forward_shapes() -> None:
     pose = torch.randn(B, T, 99)
     lh = torch.randn(B, T, 63)
     rh = torch.randn(B, T, 63)
-    face = torch.randn(B, T, 120)
-    out = model(pose, lh, rh, face)
+    out = model(pose, lh, rh)
     assert out.logits.shape == (B, T, 51)
 
 
@@ -53,7 +52,6 @@ def test_sign_model_training_step_runs() -> None:
         "pose": torch.randn(B, T, 99),
         "lh": torch.randn(B, T, 63),
         "rh": torch.randn(B, T, 63),
-        "face": torch.randn(B, T, 120),
         "mask": torch.ones(B, T, dtype=torch.bool),
         "label": torch.tensor([1, 2]),
     }

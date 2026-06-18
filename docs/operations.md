@@ -48,3 +48,22 @@ Run on a schedule. PSI > 0.2 over 24h triggers a retrain ticket.
   is reachable; CORS must allow the request origin.
 - **Long server latency**: confirm `precision` is `bf16-mixed` on the
   training host; `cpu` is expected to be slow.
+- **Extraction is too slow**: confirm you are in MVP mode
+  (`max_videos: 3000`, `extract_face: false`). The face branch of
+  MediaPipe Holistic and per-frame face detection are the dominant
+  CPU costs in the full pipeline.
+
+## Switching from MVP to full-scale training
+
+MVP defaults (`configs/features/mediapipe_holistic.yaml`):
+```yaml
+mediapipe:
+  extract_face: false
+preprocess:
+  max_videos: 3000
+```
+
+To run on the full dataset, set `max_videos: null` and re-run
+extraction. Landmark extraction is resumable: existing `.npz` files
+are skipped on restart. The face branch is intentionally disabled
+in v1; see `ARCHITECTURE.md` for why.

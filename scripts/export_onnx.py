@@ -44,22 +44,20 @@ def main() -> None:
     pose = torch.randn(1, clip_frames, int(cfg["model"]["in_dim_pose"]))
     lh = torch.randn(1, clip_frames, int(cfg["model"]["in_dim_hand"]))
     rh = torch.randn(1, clip_frames, int(cfg["model"]["in_dim_hand"]))
-    face = torch.randn(1, clip_frames, int(cfg["model"]["in_dim_face"]))
 
     fp16_path = out_dir / "model_fp16.onnx"
     with torch.inference_mode():
         torch.onnx.export(
             wrapped,
-            (pose, lh, rh, face),
+            (pose, lh, rh),
             str(fp16_path),
             opset_version=opset,
-            input_names=["pose", "lh", "rh", "face"],
+            input_names=["pose", "lh", "rh"],
             output_names=["logits"],
             dynamic_axes={
                 "pose": {0: "batch", 1: "frames"},
                 "lh": {0: "batch", 1: "frames"},
                 "rh": {0: "batch", 1: "frames"},
-                "face": {0: "batch", 1: "frames"},
                 "logits": {0: "batch", 1: "frames"},
             },
         )

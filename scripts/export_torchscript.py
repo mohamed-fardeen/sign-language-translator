@@ -45,9 +45,8 @@ def main() -> None:
     pose = torch.randn(1, clip_frames, int(cfg["model"]["in_dim_pose"]))
     lh = torch.randn(1, clip_frames, int(cfg["model"]["in_dim_hand"]))
     rh = torch.randn(1, clip_frames, int(cfg["model"]["in_dim_hand"]))
-    face = torch.randn(1, clip_frames, int(cfg["model"]["in_dim_face"]))
 
-    traced = torch.jit.trace(wrapped, (pose, lh, rh, face), strict=False)
+    traced = torch.jit.trace(wrapped, (pose, lh, rh), strict=False)
     out_path = out_dir / "model.pt"
     torch.jit.save(traced, str(out_path))
     log.info("torchscript.exported", path=str(out_path))

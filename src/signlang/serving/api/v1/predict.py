@@ -30,20 +30,18 @@ def predict(req: PredictRequest, request: Request, _claims=Depends(require_auth)
     pose = np.asarray(req.clip.pose, dtype=np.float32)
     lh = np.asarray(req.clip.lh, dtype=np.float32)
     rh = np.asarray(req.clip.rh, dtype=np.float32)
-    face = np.asarray(req.clip.face, dtype=np.float32)
     mask = np.asarray(req.clip.mask, dtype=bool) if req.clip.mask is not None else None
 
     t = int(cfg.get("clip_frames", 64))
     pose = pad_or_truncate(pose, t)
     lh = pad_or_truncate(lh, t)
     rh = pad_or_truncate(rh, t)
-    face = pad_or_truncate(face, t)
     mask = np.ones(t, dtype=bool) if mask is None else pad_or_truncate(mask, t)
 
-    if pose.shape != (t, 99) or lh.shape != (t, 63) or rh.shape != (t, 63) or face.shape != (t, 120):
+    if pose.shape != (t, 99) or lh.shape != (t, 63) or rh.shape != (t, 63):
         raise HTTPException(
             status_code=422,
-            detail=f"Clip shape mismatch: pose={pose.shape} lh={lh.shape} rh={rh.shape} face={face.shape}",
+            detail=f"Clip shape mismatch: pose={pose.shape} lh={lh.shape} rh={rh.shape}",
         )
 
     start = time.perf_counter()
@@ -52,8 +50,7 @@ def predict(req: PredictRequest, request: Request, _claims=Depends(require_auth)
         p = torch.from_numpy(pose).unsqueeze(0).to(device).float()
         l = torch.from_numpy(lh).unsqueeze(0).to(device).float()
         r = torch.from_numpy(rh).unsqueeze(0).to(device).float()
-        f = torch.from_numpy(face).unsqueeze(0).to(device).float()
-        out = predictor.model(p, l, r, f)
+        out = predictor.model(p, l, r)
         if isinstance(out, tuple):
             logits = out[0]
         elif isinstance(out, dict):

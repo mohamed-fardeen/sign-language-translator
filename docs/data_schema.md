@@ -8,23 +8,25 @@
 We filter each dataset to the locked 500-gloss vocabulary and use the
 intersection of frequent glosses across all three sources.
 
-## Per-frame features (MediaPipe Holistic)
-| Stream    | Layout                                | Dims  |
-|-----------|---------------------------------------|-------|
-| Pose      | 33 keypoints (x, y, z)                 | 99    |
-| Left hand | 21 keypoints                          | 63    |
-| Right hand| 21 keypoints                          | 63    |
-| Face      | 40-keypoint subset (lips, brows, jaw) | 120   |
-| **Total** |                                       | **345** |
+## Per-frame features (MediaPipe Holistic, MVP)
+| Stream    | Layout                | Dims  |
+|-----------|-----------------------|-------|
+| Pose      | 33 keypoints (x,y,z)  | 99    |
+| Left hand | 21 keypoints          | 63    |
+| Right hand| 21 keypoints          | 63    |
+| **Total** |                       | **225** |
 
-The face subset is defined in `configs/features/mediapipe_holistic.yaml`
-and used identically on server (Python) and browser (JS) so feature
-dimensions match end-to-end.
+**MVP scope**: face landmarks are not extracted. The face branch of
+MediaPipe Holistic is disabled in `configs/features/mediapipe_holistic.yaml`
+(`extract_face: false`). This is a deliberate scope reduction for fast
+MVP iteration; see `ARCHITECTURE.md` for context. Re-enabling face
+extraction would require changes to the model, the dataset, and the
+browser app.
 
 ## Clip layout
 - Variable raw length, **padded/truncated to T=64 frames** at 30 fps.
 - Stored per clip as a single `.npz` containing `pose`, `lh`, `rh`,
-  `face`, `mask` arrays.
+  `mask` arrays (no face).
 
 ## Manifests
 Each split (`train.json`, `val.json`, `test.json`) is a JSON file:
@@ -55,3 +57,12 @@ Each split (`train.json`, `val.json`, `test.json`) is a JSON file:
 ## DVC pipeline
 See `dvc.yaml`. Stages: `preprocess -> landmarks -> features ->
 train -> evaluate`. Re-run with `dvc repro`.
+
+## MVP video cap
+
+`configs/features/mediapipe_holistic.yaml` ships with
+`preprocess.max_videos: 3000`. The extractor processes at most the
+first N videos (sorted by path) and skips the rest. To run on the
+full dataset, set `max_videos: null` (or remove the key) in that file
+and re-run extraction. Existing `.npz` files are skipped on restart
+(resumable).

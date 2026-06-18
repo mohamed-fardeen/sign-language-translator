@@ -21,7 +21,7 @@ class _FakeModel:
     def eval(self):
         return self
 
-    def __call__(self, pose, lh, rh, face):
+    def __call__(self, pose, lh, rh):
         B, T, _ = pose.shape
         V = 501
         logits = self._t.zeros(B, T, V)
@@ -60,7 +60,6 @@ def _clip_payload() -> dict:
             "pose": np.zeros((T, 99), dtype=np.float32).tolist(),
             "lh": np.zeros((T, 63), dtype=np.float32).tolist(),
             "rh": np.zeros((T, 63), dtype=np.float32).tolist(),
-            "face": np.zeros((T, 120), dtype=np.float32).tolist(),
             "mask": [True] * T,
         },
         "top_k": 3,

@@ -18,7 +18,7 @@ def test_predict_shape_mismatch_returns_422(tmp_path, monkeypatch) -> None:
             def parameters(self):
                 yield torch.zeros(1)
 
-            def __call__(self, pose, lh, rh, face):
+            def __call__(self, pose, lh, rh):
                 B, T, _ = pose.shape
                 return torch.zeros(B, T, 501)
 
@@ -30,6 +30,13 @@ def test_predict_shape_mismatch_returns_422(tmp_path, monkeypatch) -> None:
         c.app.state.predict_cfg = {"clip_frames": 64, "beam_size": 1}
 
         tok = c.post("/v1/auth/token", json={"device_key": "abcdefgh"}).json()["access_token"]
-        bad = {"clip": {"pose": [[[0.0] * 50]], "lh": [[[0.0] * 63]], "rh": [[[0.0] * 63]], "face": [[[0.0] * 120]], "mask": [True]}}
+        bad = {
+            "clip": {
+                "pose": [[[0.0] * 50]],
+                "lh": [[[0.0] * 63]],
+                "rh": [[[0.0] * 63]],
+                "mask": [True],
+            }
+        }
         res = c.post("/v1/predict", json=bad, headers={"Authorization": f"Bearer {tok}"})
         assert res.status_code == 422

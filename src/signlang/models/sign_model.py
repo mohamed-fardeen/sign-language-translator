@@ -24,16 +24,19 @@ class SignModel(pl.LightningModule):
 
         in_pose = int(cfg.in_dim_pose)
         in_hand = int(cfg.in_dim_hand)
-        in_face = int(cfg.in_dim_face)
         enc_dim = int(cfg.encoder_dim)
+        n_streams = int(cfg.get("n_streams", 3))
         fusion_dim = int(cfg.fusion_dim)
         vocab_size = int(cfg.vocab_size) + 1
 
         self.encoder_pose = StreamEncoder(in_pose, enc_dim)
         self.encoder_lh = StreamEncoder(in_hand, enc_dim)
         self.encoder_rh = StreamEncoder(in_hand, enc_dim)
-        self.encoder_face = StreamEncoder(in_face, enc_dim)
-        self.fusion = FeatureFusion(enc_dim, n_streams=4, out_dim=fusion_dim)
+        if n_streams == 4:
+            in_face = int(cfg.in_dim_face)
+            self.encoder_face = StreamEncoder(in_face, enc_dim)
+        self.n_streams = n_streams
+        self.fusion = FeatureFusion(enc_dim, n_streams=n_streams, out_dim=fusion_dim)
 
         backbone_cls = cfg.backbone["_target_"].rsplit(".", 1)[-1]
         from signlang.models.backbones.transformer import TransformerBackbone
@@ -72,12 +75,15 @@ class SignModel(pl.LightningModule):
             task="multiclass", num_classes=vocab_size, top_k=5
         )
 
-    def forward(self, pose, lh, rh, face, mask=None) -> SignModelOutput:
+    def forward(self, pose, lh, rh, face=None, mask=None) -> SignModelOutput:
         p = self.encoder_pose(pose)
         l = self.encoder_lh(lh)
         r = self.encoder_rh(rh)
-        f = self.encoder_face(face)
-        fused = self.fusion([p, l, r, f])
+        streams = [p, l, r]
+        if self.n_streams == 4 and face is not None:
+            f = self.encoder_face(face)
+            streams.append(f)
+        fused = self.fusion(streams)
         x = self.backbone(fused, mask=mask)
         logits = self.head(x)
         return SignModelOutput(logits=logits, log_probs=torch.log_softmax(logits, dim=-1))
@@ -87,7 +93,7 @@ class SignModel(pl.LightningModule):
             batch["pose"],
             batch["lh"],
             batch["rh"],
-            batch["face"],
+            face=batch.get("face"),
             mask=batch.get("mask"),
         )
         B, T, _V = out.logits.shape

@@ -71,15 +71,14 @@ class SignClipDataset(Dataset):
         pose = clip["pose"].astype(np.float32)
         lh = clip["lh"].astype(np.float32)
         rh = clip["rh"].astype(np.float32)
-        face = clip["face"].astype(np.float32)
+        clip["face"].astype(np.float32)
         mask = clip.get("mask", np.ones(pose.shape[0], dtype=bool)).astype(bool)
 
         if self.augment:
-            pose, lh, rh, face, mask = augment_clip(
+            pose, lh, rh, mask = augment_clip(
                 pose,
                 lh,
                 rh,
-                face,
                 mask,
                 swap_hands_p=self.swap_hands_p,
                 zero_hand_p=self.zero_hand_p,
@@ -89,7 +88,6 @@ class SignClipDataset(Dataset):
         pose = self._pad_or_truncate(pose, self.clip_frames)
         lh = self._pad_or_truncate(lh, self.clip_frames)
         rh = self._pad_or_truncate(rh, self.clip_frames)
-        face = self._pad_or_truncate(face, self.clip_frames)
         if mask.shape[0] != self.clip_frames:
             m = np.zeros(self.clip_frames, dtype=bool)
             m[: min(mask.shape[0], self.clip_frames)] = mask[: self.clip_frames]
@@ -100,7 +98,6 @@ class SignClipDataset(Dataset):
             "pose": torch.from_numpy(pose),
             "lh": torch.from_numpy(lh),
             "rh": torch.from_numpy(rh),
-            "face": torch.from_numpy(face),
             "mask": torch.from_numpy(mask),
             "label": torch.tensor(int(rec["label"]), dtype=torch.long),
         }

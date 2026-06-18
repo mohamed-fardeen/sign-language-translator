@@ -3,6 +3,10 @@ mediapipe:
   smooth_landmarks: true
   refine_face_landmarks: false
   static_image_mode: false
+  # MVP: face extraction is removed entirely from the v1 pipeline.
+  # See ARCHITECTURE.md for context. Re-enabling would require
+  # restoring the face branch in signlang.models.sign_model.
+  extract_face: false
 
 streams:
   pose:
@@ -14,10 +18,6 @@ streams:
   right_hand:
     enabled: true
     n_keypoints: 21
-  face:
-    enabled: true
-    subset: [lips, eyebrows, jaw]
-    n_keypoints: 40
 
 preprocess:
   target_fps: 30
@@ -25,6 +25,9 @@ preprocess:
   clip_frames: 64
   min_frames: 32
   max_frames: 96
+  # MVP: cap on the number of source videos processed.
+  # Set to null (or remove the key) to process the full dataset.
+  max_videos: 3000
 
 normalization:
   center_on_pose: true

@@ -29,8 +29,7 @@ class TorchScriptPredictor:
         pose = torch.from_numpy(clip["pose"]).unsqueeze(0).to(self.device).float()
         lh = torch.from_numpy(clip["lh"]).unsqueeze(0).to(self.device).float()
         rh = torch.from_numpy(clip["rh"]).unsqueeze(0).to(self.device).float()
-        face = torch.from_numpy(clip["face"]).unsqueeze(0).to(self.device).float()
-        out = self.model(pose, lh, rh, face)
+        out = self.model(pose, lh, rh)
         if isinstance(out, tuple):
             logits = out[0]
         elif isinstance(out, dict):

@@ -47,8 +47,8 @@ def _jitter(arr: np.ndarray, sigma: float = 0.01, z_sigma: float = 0.005) -> np.
     return out
 
 
-def _swap_hands(pose: np.ndarray, lh: np.ndarray, rh: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    return pose, rh, lh
+def _swap_hands(_pose: np.ndarray, lh: np.ndarray, rh: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    return _pose, rh, lh
 
 
 def _zero_hand(hand: np.ndarray) -> np.ndarray:
@@ -59,7 +59,6 @@ def augment_clip(
     pose: np.ndarray,
     lh: np.ndarray,
     rh: np.ndarray,
-    face: np.ndarray,
     mask: np.ndarray,
     rotation_deg: float = 15.0,
     temporal_factors: tuple[float, float] = (0.85, 1.15),
@@ -68,31 +67,27 @@ def augment_clip(
     swap_hands_p: float = 0.0,
     zero_hand_p: float = 0.0,
     rng: np.random.Generator | None = None,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     if rng is None:
         rng = np.random.default_rng()
     pose = _rotate_xy(pose, np.deg2rad(rng.uniform(-rotation_deg, rotation_deg)))
     lh = _rotate_xy(lh, np.deg2rad(rng.uniform(-rotation_deg, rotation_deg)))
     rh = _rotate_xy(rh, np.deg2rad(rng.uniform(-rotation_deg, rotation_deg)))
-    face = _rotate_xy(face, np.deg2rad(rng.uniform(-rotation_deg, rotation_deg)))
 
     factor = float(rng.uniform(*temporal_factors))
     pose = _temporal_stretch(pose, factor)
     lh = _temporal_stretch(lh, factor)
     rh = _temporal_stretch(rh, factor)
-    face = _temporal_stretch(face, factor)
     mask = _temporal_stretch(mask.reshape(-1, 1).astype(np.float32), factor).reshape(-1).astype(bool)
 
     pose, mask = _frame_dropout(pose, mask, p=dropout_p)
     lh = lh[: pose.shape[0]]
     rh = rh[: pose.shape[0]]
-    face = face[: pose.shape[0]]
     mask = mask[: pose.shape[0]]
 
     pose = _jitter(pose, sigma=jitter_sigma)
     lh = _jitter(lh, sigma=jitter_sigma)
     rh = _jitter(rh, sigma=jitter_sigma)
-    face = _jitter(face, sigma=jitter_sigma)
 
     if swap_hands_p > 0 and rng.random() < swap_hands_p:
         pose, lh, rh = _swap_hands(pose, lh, rh)
@@ -102,4 +97,4 @@ def augment_clip(
         if rng.random() < zero_hand_p:
             rh = _zero_hand(rh)
 
-    return pose.astype(np.float32), lh.astype(np.float32), rh.astype(np.float32), face.astype(np.float32), mask
+    return pose.astype(np.float32), lh.astype(np.float32), rh.astype(np.float32), mask

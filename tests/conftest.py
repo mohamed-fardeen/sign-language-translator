@@ -21,7 +21,6 @@ def small_clip() -> dict[str, np.ndarray]:
         "pose": rng.random((T, 99), dtype=np.float32),
         "lh": rng.random((T, 63), dtype=np.float32),
         "rh": rng.random((T, 63), dtype=np.float32),
-        "face": rng.random((T, 120), dtype=np.float32),
         "mask": np.ones(T, dtype=bool),
     }
 
@@ -38,7 +37,6 @@ def tiny_manifest(tmp_path: Path) -> Path:
             pose=np.zeros((T, 99), dtype=np.float32),
             lh=np.zeros((T, 63), dtype=np.float32),
             rh=np.zeros((T, 63), dtype=np.float32),
-            face=np.zeros((T, 120), dtype=np.float32),
             mask=np.ones(T, dtype=bool),
         )
     manifest = tmp_path / "train.json"

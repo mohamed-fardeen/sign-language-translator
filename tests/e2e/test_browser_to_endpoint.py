@@ -29,7 +29,7 @@ def test_browser_to_endpoint_synthetic_clip() -> None:
             def parameters(self):
                 yield torch.zeros(1)
 
-            def __call__(self, pose, lh, rh, face):
+            def __call__(self, pose, lh, rh):
                 B, T, _ = pose.shape
                 logits = torch.zeros(B, T, 501)
                 logits[..., 7] = 5.0
@@ -50,7 +50,6 @@ def test_browser_to_endpoint_synthetic_clip() -> None:
             "pose": np.zeros((T, 99), dtype=np.float32).tolist(),
             "lh": np.zeros((T, 63), dtype=np.float32).tolist(),
             "rh": np.zeros((T, 63), dtype=np.float32).tolist(),
-            "face": np.zeros((T, 120), dtype=np.float32).tolist(),
             "mask": [True] * T,
         }
         res = c.post(
