@@ -10,6 +10,13 @@ from signlang.serving.security import JWTConfig
 
 
 class _FakeModel:
+    """Fake model that mimics v1 single-label classification.
+
+    Returns logits of shape (B, num_classes). Class index 0 is pushed
+    to a high value so ``argmax + 1 = 1`` maps to the first manifest
+    label, which in the test vocab is "hello".
+    """
+
     def __init__(self) -> None:
         import torch
 
@@ -23,9 +30,9 @@ class _FakeModel:
 
     def __call__(self, pose, lh, rh):
         B, T, _ = pose.shape
-        V = 501
-        logits = self._t.zeros(B, T, V)
-        logits[..., 1] = 5.0
+        num_classes = 184  # matches the vocab in tests/conftest.py
+        logits = self._t.zeros(B, num_classes)
+        logits[..., 0] = 5.0  # class 0 -> manifest label 1
         return logits
 
 

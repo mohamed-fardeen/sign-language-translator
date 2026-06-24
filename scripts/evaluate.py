@@ -10,7 +10,6 @@ from signlang.config import load_config, to_dict
 from signlang.data.datamodules import SignDataModule
 from signlang.evaluation.metrics import topk_accuracy
 from signlang.evaluation.reports import classification_report, write_report
-from signlang.inference.postprocess import greedy_decode
 from signlang.models.sign_model import SignModel
 from signlang.utils.io import read_json
 from signlang.utils.logging import configure_logging, get_logger
@@ -28,7 +27,6 @@ def main() -> None:
 
     cfg = to_dict(load_config())
     vocab = read_json(Path(cfg["paths"]["vocab_path"]))
-    vocab.get("gloss_to_id", {})
     id_to_gloss = vocab.get("id_to_gloss", {})
     label_names = {int(k): v for k, v in id_to_gloss.items()}
 
@@ -42,10 +40,14 @@ def main() -> None:
     targets: list[int] = []
     with torch.inference_mode():
         for batch in DataLoader(dm.test_ds, batch_size=32, num_workers=2):
-            out = model(batch["pose"], batch["lh"], batch["rh"], batch["face"], mask=batch.get("mask"))
-            decoded = greedy_decode(out.logits, blank=0)
-            for ids in decoded:
-                preds.append(ids[0] if ids else 0)
+            logits = model(batch["pose"], batch["lh"], batch["rh"], mask=batch.get("mask"))
+            # CTC kept for reference (v1 uses argmax over num_classes):
+            # decoded = greedy_decode(logits, blank=0)
+            # for ids in decoded:
+            #     preds.append(ids[0] if ids else 0)
+            pred_batch = logits.argmax(dim=-1)  # 0-indexed class indices
+            # Convert back to manifest labels (1-based) for the report.
+            preds.extend(p + 1 for p in pred_batch.tolist())
             for t in batch["label"].tolist():
                 targets.append(t)
 

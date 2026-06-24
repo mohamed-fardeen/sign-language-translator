@@ -24,7 +24,8 @@ class ClipPayload(BaseModel):
 class PredictRequest(BaseModel):
     clip: ClipPayload
     top_k: int = Field(default=5, ge=1, le=50)
-    beam_size: int | None = Field(default=None, ge=1, le=64)
+    # CTC: ``beam_size`` removed. v1 uses single-label classification; argmax
+    # over the (B, num_classes) logits is the only decoding strategy.
 
 
 class PredictionItem(BaseModel):

@@ -15,9 +15,9 @@ class _Wrapper(torch.nn.Module):
         super().__init__()
         self.model = model
 
-    def forward(self, pose, lh, rh, face):
-        out = self.model(pose, lh, rh, face)
-        return out.logits
+    def forward(self, pose, lh, rh):
+        # CTC kept for reference (was: return self.model(pose, lh, rh, face).logits)
+        return self.model(pose, lh, rh)
 
 
 def main() -> None:

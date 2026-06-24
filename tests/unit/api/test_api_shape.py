@@ -20,7 +20,8 @@ def test_predict_shape_mismatch_returns_422(tmp_path, monkeypatch) -> None:
 
             def __call__(self, pose, lh, rh):
                 B, T, _ = pose.shape
-                return torch.zeros(B, T, 501)
+                # v1: classification logits of shape (B, num_classes)
+                return torch.zeros(B, 501)
 
         c.app.state.registry = ModelRegistry()
         c.app.state.registry._models["signlang@test"] = type("M", (), {"model": _FakeModel()})()

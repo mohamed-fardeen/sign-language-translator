@@ -1,6 +1,8 @@
 _target_: signlang.models.sign_model.SignModel
+# v1 ISLR (single-label classification).
+# Output classes == vocab_size. Manifest labels are 1..vocab_size; the model
+# uses 0..vocab_size-1 internally and we subtract 1 at the loss call.
 vocab_size: 500
-blank_id: 0
 clip_frames: 64
 in_dim_pose: 99
 in_dim_hand: 63
@@ -16,12 +18,20 @@ backbone:
   dropout: 0.1
   activation: gelu
   norm_first: true
+# Classification head: linear projection to num_classes.
 head:
-  _target_: signlang.models.heads.ctc.CTCHead
-  in_dim: 512
-  vocab_size: 501
-loss:
-  _target_: signlang.models.losses.CTCLossWrapper
-  blank: 0
-  zero_infinity: true
-  weight_decay: 0.00001
+  _target_: signlang.models.heads.classification.ClassificationHead
+  d_model: 512
+  num_classes: 500
+# CTC head (kept for reference, no longer used by the model):
+# head:
+#   _target_: signlang.models.heads.ctc.CTCHead
+#   in_dim: 512
+#   vocab_size: 501
+# CrossEntropyLoss is hardcoded inside SignModel. The CTC loss config is
+# kept below for reference only.
+# loss:
+#   _target_: signlang.models.losses.CTCLossWrapper
+#   blank: 0
+#   zero_infinity: true
+#   weight_decay: 0.00001

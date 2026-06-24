@@ -6,7 +6,6 @@ import numpy as np
 import torch
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-from signlang.inference.postprocess import beam_search_decode, greedy_decode
 from signlang.serving.model_registry import pad_or_truncate
 from signlang.serving.schemas.request import (
     PredictionItem,
@@ -50,37 +49,39 @@ def predict(req: PredictRequest, request: Request, _claims=Depends(require_auth)
         p = torch.from_numpy(pose).unsqueeze(0).to(device).float()
         l = torch.from_numpy(lh).unsqueeze(0).to(device).float()
         r = torch.from_numpy(rh).unsqueeze(0).to(device).float()
-        out = predictor.model(p, l, r)
-        if isinstance(out, tuple):
-            logits = out[0]
-        elif isinstance(out, dict):
-            logits = out["logits"]
-        else:
-            logits = out
-        beam = req.beam_size or int(cfg.get("beam_size", 1))
-        if beam > 1:
-            log_probs = torch.log_softmax(logits, dim=-1)[0].cpu().numpy()
-            ids = beam_search_decode(log_probs, beam_size=beam, blank=0)
-        else:
-            ids = greedy_decode(logits, blank=0)[0]
+        logits = predictor.model(p, l, r)  # (1, num_classes)
+
+        # CTC kept for reference (removed in v1 single-label mode):
+        # beam = req.beam_size or int(cfg.get("beam_size", 1))
+        # if beam > 1:
+        #     log_probs = torch.log_softmax(logits, dim=-1)[0].cpu().numpy()
+        #     ids = beam_search_decode(log_probs, beam_size=beam, blank=0)
+        # else:
+        #     ids = greedy_decode(logits, blank=0)[0]
+        # probs = torch.softmax(logits, dim=-1)[0].cpu().numpy()
+
         probs = torch.softmax(logits, dim=-1)[0].cpu().numpy()
     latency_ms = (time.perf_counter() - start) * 1000.0
 
-    top = probs.mean(axis=0)
-    order = top.argsort()[::-1][: req.top_k]
+    # Classification: argmax over num_classes, add 1 to recover the
+    # manifest label (manifest labels are 1-based).
+    pred_idx = int(probs.argmax())
+    manifest_label = pred_idx + 1
+
+    order = probs.argsort()[::-1][: req.top_k]
     top_k = [
         PredictionItem(
-            id=int(i),
-            label=id_to_gloss.get(int(i), str(int(i))),
-            prob=float(top[i]),
+            id=int(i) + 1,
+            label=id_to_gloss.get(int(i) + 1, str(int(i) + 1)),
+            prob=float(probs[i]),
         )
         for i in order
     ]
-    gloss_id = ids[0] if ids else 0
+
     return PredictResponse(
-        gloss_id=int(gloss_id),
-        gloss_label=id_to_gloss.get(int(gloss_id), str(int(gloss_id))),
-        confidence=float(top_k[0].prob) if top_k else 0.0,
+        gloss_id=manifest_label,
+        gloss_label=id_to_gloss.get(manifest_label, str(manifest_label)),
+        confidence=float(probs[pred_idx]) if top_k else 0.0,
         top_k=top_k,
         latency_ms=round(latency_ms, 3),
         model_version=request.app.state.registry.active_key,

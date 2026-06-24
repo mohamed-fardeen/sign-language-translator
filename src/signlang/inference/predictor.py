@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import asyncio
-import contextlib
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import torch
 
-from signlang.inference.postprocess import beam_search_decode, greedy_decode
 from signlang.utils.logging import get_logger
 
 log = get_logger(__name__)
@@ -23,9 +22,15 @@ class TorchScriptPredictor:
     def predict(
         self,
         clip: dict[str, np.ndarray],
-        beam_size: int = 1,
-        blank: int = 0,
-    ) -> list[int]:
+        top_k: int = 5,
+    ) -> dict[str, Any]:
+        """Classify a single clip. Returns a dict with:
+
+        - ``label``: int, 0-indexed class index (add 1 to get the
+          manifest label)
+        - ``probs``: ndarray of shape ``(num_classes,)``
+        - ``top_k``: list of ``(class_idx, prob)`` tuples
+        """
         pose = torch.from_numpy(clip["pose"]).unsqueeze(0).to(self.device).float()
         lh = torch.from_numpy(clip["lh"]).unsqueeze(0).to(self.device).float()
         rh = torch.from_numpy(clip["rh"]).unsqueeze(0).to(self.device).float()
@@ -36,10 +41,21 @@ class TorchScriptPredictor:
             logits = out["logits"]
         else:
             logits = out
-        if beam_size <= 1:
-            return greedy_decode(logits, blank=blank)[0]
-        log_probs = torch.log_softmax(logits, dim=-1)[0].cpu().numpy()
-        return beam_search_decode(log_probs, beam_size=beam_size, blank=blank)
+
+        # CTC kept for reference (removed in v1 single-label mode):
+        # if beam_size <= 1:
+        #     return greedy_decode(logits, blank=blank)[0]
+        # log_probs = torch.log_softmax(logits, dim=-1)[0].cpu().numpy()
+        # return beam_search_decode(log_probs, beam_size=beam_size, blank=blank)
+
+        probs = torch.softmax(logits, dim=-1)[0].cpu().numpy()
+        k = min(top_k, probs.shape[0])
+        top_idx = probs.argsort()[::-1][:k]
+        return {
+            "label": int(probs.argmax()),
+            "probs": probs,
+            "top_k": [(int(i), float(probs[i])) for i in top_idx],
+        }
 
 
 class AsyncBatcher:
@@ -59,7 +75,7 @@ class AsyncBatcher:
             with contextlib.suppress(asyncio.CancelledError, Exception):
                 await self._task
 
-    async def submit(self, clip: dict[str, np.ndarray]) -> list[int]:
+    async def submit(self, clip: dict[str, np.ndarray]) -> dict[str, Any]:
         fut: asyncio.Future = asyncio.get_event_loop().create_future()
         await self._queue.put((clip, fut))
         return await fut
@@ -69,8 +85,13 @@ class AsyncBatcher:
             clip, fut = await self._queue.get()
             try:
                 preds = await asyncio.get_event_loop().run_in_executor(
-                    None, self.predictor.predict, clip, 1, 0
+                    None, self.predictor.predict, clip, 5
                 )
                 fut.set_result(preds)
             except Exception as exc:
                 fut.set_exception(exc)
+
+
+# Local import for the AsyncBatcher; placed at the bottom so the rest of the
+# module's public surface stays small.
+import contextlib  # noqa: E402

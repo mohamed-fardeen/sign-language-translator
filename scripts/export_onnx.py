@@ -15,9 +15,9 @@ class _Wrapper(torch.nn.Module):
         super().__init__()
         self.model = model
 
-    def forward(self, pose, lh, rh, face):
-        out = self.model(pose, lh, rh, face)
-        return out.logits
+    def forward(self, pose, lh, rh):
+        # CTC kept for reference (was: return self.model(pose, lh, rh, face).logits)
+        return self.model(pose, lh, rh)
 
 
 def main() -> None:
@@ -58,7 +58,8 @@ def main() -> None:
                 "pose": {0: "batch", 1: "frames"},
                 "lh": {0: "batch", 1: "frames"},
                 "rh": {0: "batch", 1: "frames"},
-                "logits": {0: "batch", 1: "frames"},
+                # v1 classification logits have shape (B, num_classes); no frames axis.
+                "logits": {0: "batch"},
             },
         )
     log.info("onnx.fp16.exported", path=str(fp16_path))
